@@ -44,10 +44,14 @@ namespace BaroqueUI
             /* XXX! This resource is not part of BaroqueUI because it contains project-specific camera
              * configuration.  Refactor!
              */
-            GameObject rig = Resources.Load<GameObject>("CameraRigs/" + name);
-            Debug.Assert(rig != null);
-            rig = UnityEngine.Object.Instantiate(rig);
-            //UnityEngine.Object.DontDestroyOnLoad(rig);   XXX
+            GameObject rig = UnityEngine.Object.FindObjectOfType<SteamVR_ControllerManager>().gameObject;
+            if (rig == null)
+            {
+                rig = Resources.Load<GameObject>("CameraRigs/" + name);
+                Debug.Assert(rig != null);
+                rig = UnityEngine.Object.Instantiate(rig);
+                //UnityEngine.Object.DontDestroyOnLoad(rig);   XXX
+            }
             return rig;
         }
     }
