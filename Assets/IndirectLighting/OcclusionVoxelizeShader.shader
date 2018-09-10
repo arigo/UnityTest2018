@@ -17,7 +17,7 @@
 			#include "UnityCG.cginc"
 
 			RWTexture3D<uint> RG0;
-            int VoxelResolution;
+            int AR_VoxelResolution;
 
         		
 			struct v2f
@@ -34,7 +34,7 @@
 
             float frag (v2f input) : SV_TARGET
 			{
-                int3 coord = int3((int)(input.pos.x), (int)(input.pos.y), (int)(input.pos.z * VoxelResolution));
+                int3 coord = int3((int)(input.pos.x), (int)(input.pos.y), (int)(input.pos.z * AR_VoxelResolution));
                 RG0[coord] = 1;
 				return 0.0;
 			}

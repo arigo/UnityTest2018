@@ -41,12 +41,11 @@ public class OcclusionFinder : MonoBehaviour
         dummyVoxelTexture.Create();
 
 
-        Shader.SetGlobalInt("VoxelResolution", voxelResolution);
+        Shader.SetGlobalInt("AR_VoxelResolution", voxelResolution);
 
-        /* clear?? */
-        clearShader.SetTexture(0, "RG0", occlusionVolume);
-        clearShader.Dispatch(0, voxelResolution / 8, voxelResolution / 8, voxelResolution / 8);
-
+        /* clear --- not needed? */
+        /*clearShader.SetTexture(0, "RG0", occlusionVolume);
+        clearShader.Dispatch(0, voxelResolution / 8, voxelResolution / 8, voxelResolution / 8);*/
 
         /* Render the scene with the voxel proxy camera object with the voxelization
          * shader to voxelize the scene to the volume integer texture
@@ -59,6 +58,11 @@ public class OcclusionFinder : MonoBehaviour
         sunCamera.RenderWithShader(occlusionVoxelizeShader, "");
         Graphics.ClearRandomWriteTargets();
 
+        DebugReadBackOcclusion();
+    }
+
+    void DebugReadBackOcclusion()
+    {
         /* debugging... try to read back data from the RWTexture3D.  It's a mess */
         int[] data;
         using (ComputeBuffer cbuf = new ComputeBuffer(voxelResolution * voxelResolution * voxelResolution, 4))
@@ -85,9 +89,9 @@ public class OcclusionFinder : MonoBehaviour
                     if (datum > 0)
                     {
                         Vector3 pos = voxelSize * new Vector3(
-                            x - voxelResolution * 0.5f, 
-                            voxelResolution * 0.5f - y,
-                            voxelResolution - z);
+                            x - (voxelResolution - 1f) * 0.5f,
+                            (voxelResolution - 1f) * 0.5f - y,
+                            voxelResolution - 0.5f - z);
 
                         var tr = GameObject.CreatePrimitive(PrimitiveType.Cube).transform;
                         tr.parent = sunCamera.transform;
