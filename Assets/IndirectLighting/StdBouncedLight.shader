@@ -47,7 +47,7 @@
 
             float3 ocpos = mul(AR_OcclusionMatrix, float4(IN.worldPos, 1)).xyz;
             //ocpos += float3(0.0625, 0.0625, 0.0625);
-            float oc = tex3D(AR_OcclusionVolume, ocpos).r * 0.5;
+            float oc = tex3D(AR_OcclusionVolume, ocpos).r * 0.1;
             o.Emission = oc;
 		}
 		ENDCG

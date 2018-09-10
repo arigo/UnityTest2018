@@ -27,8 +27,7 @@ public class OcclusionFinder : MonoBehaviour
             enableRandomWrite = true,
             msaaSamples = 1,
         });
-        occlusionVolume.wrapMode = TextureWrapMode.Repeat;//Clamp;
-        occlusionVolume.filterMode = FilterMode.Point;
+        occlusionVolume.wrapMode = TextureWrapMode.Clamp;
         occlusionVolume.Create();
 
         dummyVoxelTexture = new RenderTexture(new RenderTextureDescriptor
