@@ -10,11 +10,12 @@ public class OcclusionFinder : MonoBehaviour
     public Camera sunCamera;
     public Shader occlusionVoxelizeShader;
     public ComputeShader readSliceShader, clearShader;
+    public Material debugCubeMat;
 
     RenderTexture occlusionVolume;
     RenderTexture dummyVoxelTexture;
 
-    private void Start()
+    private IEnumerator Start()
     {
         occlusionVolume = new RenderTexture(new RenderTextureDescriptor
         {
@@ -22,11 +23,12 @@ public class OcclusionFinder : MonoBehaviour
             width = voxelResolution,
             height = voxelResolution,
             volumeDepth = voxelResolution,
-            colorFormat = RenderTextureFormat.RInt,
+            colorFormat = RenderTextureFormat.RFloat,
             enableRandomWrite = true,
             msaaSamples = 1,
         });
-        occlusionVolume.wrapMode = TextureWrapMode.Clamp;
+        occlusionVolume.wrapMode = TextureWrapMode.Repeat;//Clamp;
+        occlusionVolume.filterMode = FilterMode.Point;
         occlusionVolume.Create();
 
         dummyVoxelTexture = new RenderTexture(new RenderTextureDescriptor
@@ -51,14 +53,29 @@ public class OcclusionFinder : MonoBehaviour
          * shader to voxelize the scene to the volume integer texture
          */
         Graphics.SetRandomWriteTarget(1, occlusionVolume);
+        float ortho_size = voxelResolution * voxelSize * 0.5f;
         sunCamera.orthographic = true;
-        sunCamera.orthographicSize = voxelResolution * voxelSize * 0.5f;
+        sunCamera.orthographicSize = ortho_size;
         sunCamera.aspect = 1;
         sunCamera.targetTexture = dummyVoxelTexture;
         sunCamera.RenderWithShader(occlusionVoxelizeShader, "");
         Graphics.ClearRandomWriteTargets();
 
-        DebugReadBackOcclusion();
+        Vector3 corner = sunCamera.transform.position - ortho_size * (
+            sunCamera.transform.right - sunCamera.transform.up - 2 * sunCamera.transform.forward);
+        Matrix4x4 occlusionMatrix = Matrix4x4.TRS(
+            corner,
+            sunCamera.transform.rotation,
+            Vector3.one * (ortho_size * 2f)).inverse;
+        occlusionMatrix.SetRow(1, -occlusionMatrix.GetRow(1));
+        occlusionMatrix.SetRow(2, -occlusionMatrix.GetRow(2));
+
+        Shader.SetGlobalTexture("AR_OcclusionVolume", occlusionVolume);
+        Shader.SetGlobalMatrix("AR_OcclusionMatrix", occlusionMatrix);
+
+        //yield return new WaitForSeconds(2.5f);
+        //DebugReadBackOcclusion();
+        yield return null;
     }
 
     void DebugReadBackOcclusion()
@@ -94,6 +111,7 @@ public class OcclusionFinder : MonoBehaviour
                             voxelResolution - 0.5f - z);
 
                         var tr = GameObject.CreatePrimitive(PrimitiveType.Cube).transform;
+                        tr.GetComponent<Renderer>().sharedMaterial = debugCubeMat;
                         tr.parent = sunCamera.transform;
                         tr.localPosition = pos;
                         tr.localRotation = Quaternion.identity;

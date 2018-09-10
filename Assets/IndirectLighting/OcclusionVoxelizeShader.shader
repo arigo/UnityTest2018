@@ -16,7 +16,7 @@
 			#pragma fragment frag
 			#include "UnityCG.cginc"
 
-			RWTexture3D<uint> RG0;
+			RWTexture3D<float> RG0;
             int AR_VoxelResolution;
 
         		

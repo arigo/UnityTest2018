@@ -1,7 +1,7 @@
 ﻿#pragma kernel CSMain
 
 RWStructuredBuffer<uint> Result;
-RWTexture3D<uint> Source;
+Texture3D<float> Source;
 int AR_VoxelResolution;
 
 [numthreads(8,8,8)]
