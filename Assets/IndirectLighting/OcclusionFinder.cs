@@ -9,7 +9,7 @@ public class OcclusionFinder : MonoBehaviour
     public float voxelSize = 0.1f;
     public Camera sunCamera;
     public Shader occlusionVoxelizeShader;
-    public ComputeShader readSliceShader, clearShader;
+    public ComputeShader readSliceShader, clearShader, debugSetitemShader;
     public Material debugCubeMat;
 
     RenderTexture occlusionVolume;
@@ -28,6 +28,7 @@ public class OcclusionFinder : MonoBehaviour
             msaaSamples = 1,
         });
         occlusionVolume.wrapMode = TextureWrapMode.Clamp;
+        occlusionVolume.filterMode = FilterMode.Point;
         occlusionVolume.Create();
 
         dummyVoxelTexture = new RenderTexture(new RenderTextureDescriptor
@@ -71,10 +72,11 @@ public class OcclusionFinder : MonoBehaviour
 
         Shader.SetGlobalTexture("AR_OcclusionVolume", occlusionVolume);
         Shader.SetGlobalMatrix("AR_OcclusionMatrix", occlusionMatrix);
+        Shader.SetGlobalFloat("AR_OcclusionVoxelSize", voxelSize);
 
         //yield return new WaitForSeconds(2.5f);
-        //DebugReadBackOcclusion();
         yield return null;
+        DebugReadBackOcclusion();
     }
 
     void DebugReadBackOcclusion()
@@ -96,6 +98,11 @@ public class OcclusionFinder : MonoBehaviour
             total += x;
         Debug.Log("total: " + total);
 
+        var parent_transform = new GameObject("CUBES").transform;
+        parent_transform.position = sunCamera.transform.position;
+        parent_transform.rotation = sunCamera.transform.rotation;
+        //parent_transform.gameObject.SetActive(false);
+
         int isrc = 0;
         for (int z = 0; z < voxelResolution; z++)
             for (int y = 0; y < voxelResolution; y++)
@@ -110,12 +117,31 @@ public class OcclusionFinder : MonoBehaviour
                             voxelResolution - 0.5f - z);
 
                         var tr = GameObject.CreatePrimitive(PrimitiveType.Cube).transform;
-                        tr.GetComponent<Renderer>().sharedMaterial = debugCubeMat;
-                        tr.parent = sunCamera.transform;
+                        //tr.GetComponent<Renderer>().sharedMaterial = debugCubeMat;
+                        tr.GetComponent<Renderer>().enabled = false;
+                        tr.parent = parent_transform;
                         tr.localPosition = pos;
                         tr.localRotation = Quaternion.identity;
                         tr.localScale = Vector3.one * voxelSize;
+                        var ro = tr.gameObject.AddComponent<RemoveOcclusion>();
+                        ro.ofinder = this;
+                        ro.cubeIndex = new Vector3(x, y, z);
                     }
                 }
+    }
+
+    class RemoveOcclusion : MonoBehaviour
+    {
+        public OcclusionFinder ofinder;
+        public Vector3 cubeIndex;
+
+        private void OnDestroy()
+        {
+            var shader = ofinder.debugSetitemShader;
+            shader.SetTexture(0, "Result", ofinder.occlusionVolume);
+            shader.SetVector("Index", cubeIndex);
+            shader.SetFloat("Value", 0f);
+            shader.Dispatch(0, 1, 1, 1);
+        }
     }
 }

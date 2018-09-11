@@ -19,6 +19,7 @@
 
 		struct Input {
             float3 worldPos;
+            float3 worldNormal;
 			float2 uv_MainTex;
 		};
 
@@ -27,6 +28,7 @@
 		fixed4 _Color;
 
         float4x4 AR_OcclusionMatrix;
+        float AR_OcclusionVoxelSize;
         sampler3D AR_OcclusionVolume;
 
 		// Add instancing support for this shader. You need to check 'Enable Instancing' on materials that use the shader.
@@ -39,14 +41,15 @@
 		void surf (Input IN, inout SurfaceOutputStandard o) {
 			// Albedo comes from a texture tinted by color
 			fixed4 c = tex2D (_MainTex, IN.uv_MainTex) * _Color;
-			o.Albedo = c.rgb;
+            o.Albedo = 0;// c.rgb;
 			// Metallic and smoothness come from slider variables
 			o.Metallic = _Metallic;
 			o.Smoothness = _Glossiness;
 			o.Alpha = c.a;
 
-            float3 ocpos = mul(AR_OcclusionMatrix, float4(IN.worldPos, 1)).xyz;
-            //ocpos += float3(0.0625, 0.0625, 0.0625);
+            // 1.22475 =~ sqrt(6)/2.  there is a reason
+            float3 inpos = IN.worldPos + IN.worldNormal * AR_OcclusionVoxelSize * 1.22475;
+            float3 ocpos = mul(AR_OcclusionMatrix, float4(inpos, 1)).xyz;
             float oc = tex3D(AR_OcclusionVolume, ocpos).r * 0.1;
             o.Emission = oc;
 		}

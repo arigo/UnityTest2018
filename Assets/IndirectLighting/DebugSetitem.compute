@@ -1,0 +1,11 @@
+﻿#pragma kernel CSMain
+
+RWTexture3D<float> Result;
+float3 Index;
+float Value;
+
+[numthreads(1,1,1)]
+void CSMain (uint3 id : SV_DispatchThreadID)
+{
+    Result[Index] = Value;
+}
