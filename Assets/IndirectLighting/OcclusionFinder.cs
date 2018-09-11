@@ -58,8 +58,30 @@ public class OcclusionFinder : MonoBehaviour
         sunCamera.orthographicSize = ortho_size;
         sunCamera.aspect = 1;
         sunCamera.targetTexture = dummyVoxelTexture;
+        Shader.EnableKeyword("AXIS_XYZ");
         sunCamera.RenderWithShader(occlusionVoxelizeShader, "");
+        Shader.DisableKeyword("AXIS_XYZ");
+
+        Vector3 sun_position = sunCamera.transform.position;
+        Quaternion sun_orientation = sunCamera.transform.rotation;
+        sunCamera.transform.SetPositionAndRotation(
+            sun_position + ortho_size * (sunCamera.transform.forward + sunCamera.transform.right),
+            sun_orientation * Quaternion.LookRotation(-Vector3.right, Vector3.forward));
+        Shader.EnableKeyword("AXIS_ZXY");
+        sunCamera.RenderWithShader(occlusionVoxelizeShader, "");
+        Shader.DisableKeyword("AXIS_ZXY");
+        sunCamera.transform.rotation = sun_orientation;
+
+        sunCamera.transform.SetPositionAndRotation(
+            sun_position + ortho_size * (sunCamera.transform.forward - sunCamera.transform.up),
+            sun_orientation * Quaternion.LookRotation(Vector3.up, -Vector3.right));
+        Shader.EnableKeyword("AXIS_YZX");
+        sunCamera.RenderWithShader(occlusionVoxelizeShader, "");
+        Shader.DisableKeyword("AXIS_YZX");
+
+        sunCamera.transform.SetPositionAndRotation(sun_position, sun_orientation);
         Graphics.ClearRandomWriteTargets();
+
 
         Vector3 corner = sunCamera.transform.position - ortho_size * (
             sunCamera.transform.right - sunCamera.transform.up - 2 * sunCamera.transform.forward);
