@@ -8,12 +8,12 @@ public class OcclusionFinder : MonoBehaviour
     public int voxelResolution = 64;
     public float voxelSize = 0.1f;
     public Camera sunCamera;
-    public Shader occlusionVoxelizeShader;
+    public Shader occlusionVoxelizeShader, sunVoxelizeShader;
     public ComputeShader readSliceShader, clearShader, debugSetitemShader;
     public Material debugCubeMat;
 
     RenderTexture occlusionVolume;
-    RenderTexture dummyVoxelTexture;
+    public RenderTexture directShadowTexture;
 
     private IEnumerator Start()
     {
@@ -31,16 +31,17 @@ public class OcclusionFinder : MonoBehaviour
         occlusionVolume.filterMode = FilterMode.Point;
         occlusionVolume.Create();
 
-        dummyVoxelTexture = new RenderTexture(new RenderTextureDescriptor
+        directShadowTexture = new RenderTexture(new RenderTextureDescriptor
         {
             dimension = UnityEngine.Rendering.TextureDimension.Tex2D,
             width = voxelResolution,
             height = voxelResolution,
             volumeDepth = 1,
-            colorFormat = RenderTextureFormat.RInt,
+            colorFormat = RenderTextureFormat.ARGB32,
+            //depthBufferBits = 24,
             msaaSamples = 1,
         });
-        dummyVoxelTexture.Create();
+        directShadowTexture.Create();
 
 
         Shader.SetGlobalInt("AR_VoxelResolution", voxelResolution);
@@ -52,12 +53,12 @@ public class OcclusionFinder : MonoBehaviour
         /* Render the scene with the voxel proxy camera object with the voxelization
          * shader to voxelize the scene to the volume integer texture
          */
-        Graphics.SetRandomWriteTarget(1, occlusionVolume);
         float ortho_size = voxelResolution * voxelSize * 0.5f;
         sunCamera.orthographic = true;
         sunCamera.orthographicSize = ortho_size;
         sunCamera.aspect = 1;
-        sunCamera.targetTexture = dummyVoxelTexture;
+        sunCamera.targetTexture = directShadowTexture;
+        Graphics.SetRandomWriteTarget(1, occlusionVolume);
         Shader.EnableKeyword("AXIS_XYZ");
         sunCamera.RenderWithShader(occlusionVoxelizeShader, "");
         Shader.DisableKeyword("AXIS_XYZ");
@@ -165,5 +166,13 @@ public class OcclusionFinder : MonoBehaviour
             shader.SetFloat("Value", 0f);
             shader.Dispatch(0, 1, 1, 1);
         }
+    }
+
+
+    private void Update()
+    {
+        directShadowTexture.Create();
+        sunCamera.targetTexture = directShadowTexture;
+        sunCamera.RenderWithShader(sunVoxelizeShader, "");
     }
 }
