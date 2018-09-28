@@ -6,13 +6,13 @@ using UnityEngine;
 public class OcclusionFinder : MonoBehaviour
 {
     public int voxelResolution = 64;
-    public float voxelSize = 0.1f;
     public Camera sunCamera;
     public Shader occlusionVoxelizeShader, sunVoxelizeShader;
     public ComputeShader readSliceShader, clearShader, debugSetitemShader;
     public Material debugCubeMat;
 
     RenderTexture occlusionVolume;
+    float voxelSize;
     public RenderTexture directShadowTexture;
 
     private IEnumerator Start()
@@ -37,8 +37,8 @@ public class OcclusionFinder : MonoBehaviour
             width = voxelResolution,
             height = voxelResolution,
             volumeDepth = 1,
-            colorFormat = RenderTextureFormat.ARGB32,
-            //depthBufferBits = 24,
+            colorFormat = RenderTextureFormat.R8,
+            depthBufferBits = 24,
             msaaSamples = 1,
         });
         directShadowTexture.Create();
@@ -53,6 +53,9 @@ public class OcclusionFinder : MonoBehaviour
         /* Render the scene with the voxel proxy camera object with the voxelization
          * shader to voxelize the scene to the volume integer texture
          */
+        Debug.Assert(sunCamera.nearClipPlane == 0f);
+        voxelSize = sunCamera.farClipPlane / voxelResolution;
+
         float ortho_size = voxelResolution * voxelSize * 0.5f;
         sunCamera.orthographic = true;
         sunCamera.orthographicSize = ortho_size;
