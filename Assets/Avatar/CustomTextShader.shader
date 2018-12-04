@@ -35,7 +35,7 @@
 		void surf (Input IN, inout SurfaceOutputStandard o) {
 			// Albedo comes from a texture tinted by color
 			float2 uv = IN.uv_MainTex;
-			uv.x = uv.x * 2 + _Time.y * 0.4;
+			uv.x = uv.x * 2; // +_Time.y * 0.4;
 			fixed r = tex2D(_MainTex, uv).r;   /* only use the R channel */
 			fixed4 c = r * _Color;
 			o.Albedo = c.rgb;
