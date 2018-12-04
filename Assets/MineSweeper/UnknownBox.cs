@@ -6,8 +6,12 @@ using BaroqueUI;
 
 public class UnknownBox : MonoBehaviour
 {
-    public Material activeMat, defaultMat, probablyBombMat;
+    public Material activeMat, defaultMat, probablyBombMat, extraLightMat, probablyBombExtraLightMat;
     public bool probablyBomb;
+    public Vector3Int position;
+    public Mines mines;
+
+    bool _hover;
 
 
     void Start()
@@ -22,24 +26,49 @@ public class UnknownBox : MonoBehaviour
     private void Ht_onTouchPressDown(Controller controller)
     {
         probablyBomb = !probablyBomb;
-        GetComponent<Renderer>().sharedMaterial = probablyBomb ? probablyBombMat : activeMat;
+        UpdateMaterial();
     }
 
     private void Ht_onTriggerDown(Controller controller)
     {
         if (probablyBomb)
             return;
-        var mines = GetComponentInParent<Mines>();
         mines.Click(transform);
     }
 
     private void Ht_onEnter(Controller controller)
     {
-        GetComponent<Renderer>().sharedMaterial = probablyBomb ? probablyBombMat : activeMat;
+        _hover = true;
+        UpdateMaterial();
     }
 
     private void Ht_onLeave(Controller controller)
     {
-        GetComponent<Renderer>().sharedMaterial = probablyBomb ? probablyBombMat : defaultMat;
+        _hover = false;
+        UpdateMaterial();
+    }
+
+    bool ReceiveExtraLight()
+    {
+        foreach (var pos in mines.Neighbors(position))
+        {
+            var digitbox = mines.GetCellComponent<DigitBox>(pos);
+            if (digitbox != null && digitbox.emit_extra_light)
+                return true;
+        }
+        return false;
+    }
+
+    public void UpdateMaterial()
+    {
+        Material mat;
+
+        if (probablyBomb)
+            mat = ReceiveExtraLight() ? probablyBombExtraLightMat : probablyBombMat;
+        else if (_hover)
+            mat = activeMat;
+        else
+            mat = ReceiveExtraLight() ? extraLightMat : defaultMat;
+        GetComponent<Renderer>().sharedMaterial = mat;
     }
 }

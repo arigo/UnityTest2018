@@ -11,7 +11,7 @@ public class Clock : MonoBehaviour
     public Material clockDigitMat;
 
 
-	void Start()
+    private void Start()
     {
         Display(0);
     }
@@ -26,9 +26,9 @@ public class Clock : MonoBehaviour
         int seconds = 0;
         while (true)
         {
+            Display(seconds);
             yield return new WaitForSeconds(1);
             seconds++;
-            Display(seconds);
         }
     }
 
@@ -71,5 +71,11 @@ public class Clock : MonoBehaviour
     public void StopTicking()
     {
         StopAllCoroutines();
+    }
+
+    public void ResetTicking()
+    {
+        StopTicking();
+        Display(0);
     }
 }

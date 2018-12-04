@@ -111,4 +111,9 @@ MonoBehaviour:
   activeMat: {fileID: 2100000, guid: 9ee3b853f028a6d4695f6521ad871ca7, type: 2}
   defaultMat: {fileID: 2100000, guid: a7a78693b7968c34181178f46cda8310, type: 2}
   probablyBombMat: {fileID: 2100000, guid: caf4f713aac2c554eb5eb6f7a5f7eabc, type: 2}
+  extraLightMat: {fileID: 2100000, guid: 9988ffe8efbea884ca70c62271fda3b0, type: 2}
+  probablyBombExtraLightMat: {fileID: 2100000, guid: c195b6daeb8bb644bac18aa6c6342a69,
+    type: 2}
   probablyBomb: 0
+  position: {x: 0, y: 0, z: 0}
+  mines: {fileID: 0}
