@@ -45,7 +45,8 @@ public class SelectLevel : MonoBehaviour
 
     private void Ht_onTriggerDown(Controller controller)
     {
-        mines.playArea.currentMines.Unpopulate();
+        if (mines.playArea.currentMines != null)
+            mines.playArea.currentMines.Unpopulate();
         mines.playArea.currentMines = mines;
         mines.Populate();
 
@@ -55,6 +56,6 @@ public class SelectLevel : MonoBehaviour
 
     private void Update()
     {
-        transform.rotation = Quaternion.Euler(Time.time * 90f, 0, 0);
+        transform.rotation = Quaternion.Euler(0, Time.time * 135f, 0);
     }
 }

@@ -28,8 +28,6 @@ public class Mines : MonoBehaviour
     private void Start()
     {
         cells = new Dictionary<Vector3Int, Transform>();
-        if (this == playArea.currentMines)
-            Populate();
     }
 
     public void Populate()
@@ -168,6 +166,9 @@ public class Mines : MonoBehaviour
         if (bombs == null)
         {
             MakeBombs(pos);
+            foreach (var p1 in Neighbors(pos))
+                if (Distance(p1, pos) == 1)
+                    Click(p1);
             playArea.clock.StartTicking();
         }
         if (bombs.Contains(pos))
@@ -199,7 +200,7 @@ public class Mines : MonoBehaviour
                     Random.Range(0, nx),
                     Random.Range(0, ny),
                     Random.Range(0, nz));
-                if (p1 == pos || bombs.Contains(p1))
+                if (Distance(p1, pos) <= 1 || bombs.Contains(p1))
                     continue;
                 bombs.Add(p1);
                 break;
@@ -208,20 +209,23 @@ public class Mines : MonoBehaviour
         playArea.selectLevel.SetActive(false);
     }
 
+    static int Distance(Vector3Int p1, Vector3Int p2)
+    {
+        int dx = p1.x - p2.x; if (dx < 0) dx = -dx;
+        int dy = p1.y - p2.y; if (dy < 0) dy = -dy;
+        int dz = p1.z - p2.z; if (dz < 0) dz = -dz;
+        return dx + dy + dz;
+    }
+
     public IEnumerable<Vector3Int> Neighbors(Vector3Int pos)
     {
         for (int z = pos.z - 1; z <= pos.z + 1; z++)
             for (int y = pos.y - 1; y <= pos.y + 1; y++)
                 for (int x = pos.x - 1; x <= pos.x + 1; x++)
                 {
-                    if (x != pos.x || y != pos.y || z != pos.z)
-                    {
-                        int dx = (x != pos.x) ? 1 : 0;
-                        int dy = (y != pos.y) ? 1 : 0;
-                        int dz = (z != pos.z) ? 1 : 0;
-                        if (dx + dy + dz < 3)
-                            yield return new Vector3Int(x, y, z);
-                    }
+                    int distance = Distance(pos, new Vector3Int(x, y, z));
+                    if (distance > 0 && distance < 3)
+                        yield return new Vector3Int(x, y, z);
                 }
     }
 
