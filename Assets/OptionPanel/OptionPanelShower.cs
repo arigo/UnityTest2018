@@ -94,12 +94,6 @@ public class OptionPanelShower : MonoBehaviour
 
         panel.transform.localScale = Vector3.one * fraction;
 
-        var color = panel.backgroundCube.material.color;
-        color.a = fraction;
-        panel.backgroundCube.material.color = color;
-
-        color = panel.backgroundPanel.color;
-        color.a = fraction * 0.8235f;
-        panel.backgroundPanel.color = color;
+        panel.SetOpacity(fraction);
     }
 }

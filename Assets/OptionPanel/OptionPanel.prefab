@@ -426,6 +426,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   backgroundPanel: {fileID: 114123199229946504}
   backgroundCube: {fileID: 23915794367621032}
+  opaqueMaterial: {fileID: 2100000, guid: 9173e616a55aaba40ad4bdce39ab84af, type: 2}
+  transparentMaterial: {fileID: 2100000, guid: 88e17a0fc396d2b4bbfe544ea035f28e, type: 2}
 --- !u!222 &222200239952301480
 CanvasRenderer:
   m_ObjectHideFlags: 1
