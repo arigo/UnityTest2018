@@ -8,22 +8,25 @@ public class OptionPanelShower : MonoBehaviour
 {
     public OptionPanel panelPrefab;
 
-    OptionPanel panel;
 
-
-    IEnumerator Start()
+    void Start()
     {
-        Controller ctrl = Baroque.GetControllers()[1];
+        foreach (var ctrl in Baroque.GetControllers())
+            StartCoroutine(Run(ctrl));
+    }
 
+    IEnumerator Run(Controller ctrl)
+    {
+        OptionPanel panel = null;
         while (true)
         {
-            RemovePanel();
+            RemovePanel(ref panel);
             yield return null;
 
             /* wait until we touch the touchpad */
             while (ctrl.isActiveAndEnabled && ctrl.touchpadTouched)
             {
-                RemovePanel();
+                RemovePanel(ref panel);
 
                 /* track moves */
                 Vector2 origin = ctrl.touchpadPosition;
@@ -36,13 +39,13 @@ public class OptionPanelShower : MonoBehaviour
                         break;
 
                     current_delta = ctrl.touchpadPosition - origin;
-                    ShowAtCurrentDelta(ctrl, current_delta);
+                    ShowAtCurrentDelta(ref panel, ctrl, current_delta);
                 }
 
                 if (panel == null || current_delta.sqrMagnitude < 0.4f)
                     break;
 
-                ShowAtCurrentDelta(ctrl, current_delta * 16f);
+                ShowAtCurrentDelta(ref panel, ctrl, current_delta * 16f);
 
                 /* wait until the next time we touch the touchpad */
                 while (ctrl.isActiveAndEnabled && !ctrl.touchpadTouched)
@@ -51,7 +54,7 @@ public class OptionPanelShower : MonoBehaviour
         }
     }
 
-    void RemovePanel()
+    void RemovePanel(ref OptionPanel panel)
     {
         if (panel != null)
         {
@@ -60,12 +63,12 @@ public class OptionPanelShower : MonoBehaviour
         }
     }
 
-    void ShowAtCurrentDelta(Controller controller, Vector2 delta)
+    void ShowAtCurrentDelta(ref OptionPanel panel, Controller controller, Vector2 delta)
     {
         float fraction = delta.sqrMagnitude;
         if (fraction < 0.01f)
         {
-            RemovePanel();
+            RemovePanel(ref panel);
             return;
         }
 
@@ -83,7 +86,12 @@ public class OptionPanelShower : MonoBehaviour
             controller.right * delta.x * DISTANCE_MAX +
             controller.up * delta.y * DISTANCE_MAX;
 
-        Vector3 euler_angles = controller.rotation.eulerAngles;
+        Transform headset = Baroque.GetHeadTransform();
+        Quaternion rot1 = controller.rotation;
+        Quaternion rot2 = Quaternion.LookRotation(controller.position - headset.position);
+        Quaternion rot3 = Quaternion.Lerp(rot1, rot2, fraction * 0.5f);
+
+        Vector3 euler_angles = rot3.eulerAngles;
         euler_angles.z = 0;
         Vector3 up1 = Quaternion.Euler(euler_angles) * Vector3.up;
         if (Vector3.Dot(Baroque.GetHeadTransform().up, up1) < 0)
@@ -95,5 +103,6 @@ public class OptionPanelShower : MonoBehaviour
         panel.transform.localScale = Vector3.one * fraction;
 
         panel.SetOpacity(fraction);
+        panel.ActivateInteractions(fraction >= 1f);
     }
 }

@@ -8,6 +8,7 @@ public class OptionPanel : MonoBehaviour
     public UnityEngine.UI.Image backgroundPanel;
     public MeshRenderer backgroundCube;
     public Material opaqueMaterial, transparentMaterial;
+    public MyDialog myDialog;
 
     Material transparentMaterialCopy;
 
@@ -34,5 +35,10 @@ public class OptionPanel : MonoBehaviour
         color = backgroundPanel.color;
         color.a = fraction * 0.8235f;
         backgroundPanel.color = color;
+    }
+
+    public void ActivateInteractions(bool active)
+    {
+        myDialog.enabled = active;
     }
 }

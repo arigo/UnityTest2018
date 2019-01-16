@@ -1,5 +1,4 @@
-﻿#if false
-using System;
+﻿using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -10,26 +9,76 @@ using BaroqueUI;
 
 public class MyDialog : MonoBehaviour
 {
-    public Transform pointerPrefab;
-
-    class PointerPos
-    {
-        internal Transform pointer;
-    }
-    PointerPos[] pointers_pos;
+    //public Transform pointerPrefab;
+    //public CrossDialog cross;
+    public RectTransform highlight;
 
 
     private void Start()
     {
         var ct = Controller.HoverTracker(this);
-        ct.SetPriority(500);
+        ct.computePriority = GetPriority;
         ct.onEnter += OnEnter;
         ct.onMoveOver += MouseMove;
         ct.onLeave += OnLeave;
         ct.onTriggerDown += MouseDown;
         ct.onTriggerDrag += MouseMove;
         ct.onTriggerUp += MouseUp;
+
+        foreach (var canvas in GetComponentsInChildren<Canvas>())
+        {
+            var rend = canvas.GetComponent<DialogRenderer>();
+            if (rend == null)
+            {
+                rend = canvas.gameObject.AddComponent<DialogRenderer>();
+                float pixels_per_unit = GetComponent<CanvasScaler>().dynamicPixelsPerUnit;
+                rend.PrepareForRendering(pixels_per_unit);
+            }
+        }
     }
+
+    private void OnEnable()
+    {
+        GetComponent<Collider>().enabled = true;
+    }
+
+    private void OnDisable()
+    {
+        current_pressed = null;
+        Leave();
+        GetComponent<Collider>().enabled = false;
+    }
+
+    static bool IsBetterRaycastResult(RaycastResult rr1, RaycastResult rr2)
+    {
+        if (rr1.sortingLayer != rr2.sortingLayer)
+            return SortingLayer.GetLayerValueFromID(rr1.sortingLayer) > SortingLayer.GetLayerValueFromID(rr2.sortingLayer);
+        if (rr1.sortingOrder != rr2.sortingOrder)
+            return rr1.sortingOrder > rr2.sortingOrder;
+        if (rr1.depth != rr2.depth)
+            return rr1.depth > rr2.depth;
+        if (rr1.distance != rr2.distance)
+            return rr1.distance < rr2.distance;
+        return rr1.index < rr2.index;
+    }
+
+    static bool BestRaycastResult(List<RaycastResult> lst, ref RaycastResult best_result)
+    {
+        bool found_any = false;
+
+        foreach (var result in lst)
+        {
+            if (result.gameObject == null)
+                continue;
+            if (!found_any || IsBetterRaycastResult(result, best_result))
+            {
+                best_result = result;
+                found_any = true;
+            }
+        }
+        return found_any;
+    }
+
 
     PointerEventData pevent;
     GameObject current_pressed;
@@ -58,80 +107,58 @@ public class MyDialog : MonoBehaviour
                     ExecuteEvents.Execute(pevent.pointerDrag, pevent, ExecuteEvents.dragHandler);
             }
         }
-        UpdateCursor(controller, true);
-    }
 
-    void UpdateCursor(Controller controller, bool visible)
-    {
-        var pp = controller.GetAdditionalData(ref pointers_pos);
-        if ((pp.pointer != null) != visible)
+        /*Selectable selectable = null;
+        if (pevent.pointerEnter != null)
+            selectable = pevent.pointerEnter.GetComponentInParent<Selectable>();
+
+        if (selectable != null && selectable.IsInteractable())
         {
-            if (visible)
-                pp.pointer = Instantiate(pointerPrefab);
-            else
-            {
-                Destroy(pp.pointer);
-                pp.pointer = null;
-            }
+            var rtr = selectable.transform as RectTransform;
+            var canvas = GetComponent<Canvas>();
+            Vector2 actual_pt = canvas.transform.InverseTransformPoint(controller.position);
+            Vector2 topleft = canvas.transform.InverseTransformPoint(rtr.TransformPoint(rtr.rect.min));
+            Vector2 rectsize = canvas.transform.InverseTransformVector(rtr.TransformVector(rtr.rect.size));
+            cross.SetBoundsAndHighlight(new Rect(topleft, rectsize), actual_pt);
+            cross.gameObject.SetActive(true);
         }
-        if (pp.pointer != null)
-        {
-            pp.pointer.transform.rotation = transform.rotation;
-        }
+        else
+            cross.gameObject.SetActive(false);*/
+
+        var canvas = GetComponent<Canvas>();
+        Vector2 actual_pt = canvas.transform.InverseTransformPoint(controller.position);
+        highlight.localPosition = actual_pt;
+        highlight.gameObject.SetActive(true);
     }
 
-    static Vector2 ScreenPoint(Canvas canvas, Vector3 world_position)
+#if false
+    void UpdateCursor(Controller controller)
     {
-        RectTransform rtr = canvas.transform as RectTransform;
-        Vector2 local_pos = canvas.transform.InverseTransformPoint(world_position);   /* drop the 'z' coordinate */
-        local_pos.x += rtr.rect.width * rtr.pivot.x;
-        local_pos.y += rtr.rect.height * rtr.pivot.y;
-        /* Here, 'local_pos' is in coordinates that match the UI element coordinates.
-         * To convert it to the 'screenspace' coordinates of a camera, we need to apply
-         * a scaling factor of 'pixels_per_unit'. */
-        float pixels_per_unit = canvas.GetComponent<CanvasScaler>().dynamicPixelsPerUnit;
-        return local_pos * pixels_per_unit;
-    }
+        bool visible = (controller != null);
+        cross.gameObject.SetActive(visible);
 
-    static void CustomRaycast(Canvas canvas, Vector3 world_position, List<RaycastResult> results)
-    {
-        Vector2 screen_point = ScreenPoint(canvas, world_position);
-        var graphicsForCanvas = GraphicRegistry.GetGraphicsForCanvas(canvas);
-        for (int i = 0; i < graphicsForCanvas.Count; i++)
+        if (visible)
         {
-            Graphic graphic = graphicsForCanvas[i];
-            if (graphic.canvasRenderer.cull)
-                continue;
-            if (graphic.depth == -1)
-                continue;
-            if (!graphic.raycastTarget)
-                continue;
-            if (!RectTransformUtility.RectangleContainsScreenPoint(graphic.rectTransform, screen_point, ortho_camera))
-                continue;
-            if (!graphic.Raycast(screen_point, ortho_camera))
-                continue;
+            /*var tr = pointer.transform;
+            Vector3 pos = controller.position;
+            pos = transform.position + Vector3.ProjectOnPlane(pos - transform.position, transform.forward);
+            tr.position = pos;
+            tr.rotation = transform.rotation;*/
 
-            results.Add(new RaycastResult
-            {
-                gameObject = graphic.gameObject,
-                module = canvas.GetComponent<GraphicRaycaster>(),
-                index = results.Count,
-                depth = graphic.depth,
-                sortingLayer = canvas.sortingLayerID,
-                sortingOrder = canvas.sortingOrder,
-                screenPosition = screen_point,
-            });
+            Vector2 local_pos = transform.InverseTransformPoint(controller.position);   /* drop the 'z' coordinate */
+            cross.localPosition = local_pos;   /* z = 0 */
         }
     }
+#endif
 
     bool UpdateCurrentPoint(Vector3 controller_position, bool allow_out_of_bounds = false)
     {
-        Vector2 screen_point = ScreenPoint(GetComponent<Canvas>(), controller_position);
+        Vector2 screen_point = GetComponent<DialogRenderer>().ScreenPoint(controller_position);
         pevent.position = screen_point;
 
         var results = new List<RaycastResult>();
-        foreach (var canvas in GetComponentsInChildren<Canvas>())
-            CustomRaycast(canvas, controller_position, results);
+        foreach (var rend in GetComponentsInChildren<DialogRenderer>())
+            rend.CustomRaycast(controller_position, results);
 
         RaycastResult rr = new RaycastResult { depth = -1, screenPosition = screen_point };
         if (!BestRaycastResult(results, ref rr))
@@ -182,11 +209,21 @@ public class MyDialog : MonoBehaviour
         }
     }
 
+    void Leave()
+    {
+        if (pevent != null)
+        {
+            UpdateHoveringTarget(null);
+            pevent = null;
+        }
+        //UpdateCursor(null);
+        //cross.gameObject.SetActive(false);
+        highlight.gameObject.SetActive(false);
+    }
+
     void OnLeave(Controller controller)
     {
-        UpdateHoveringTarget(null);
-        pevent = null;
-        UpdateCursor(controller, false);
+        Leave();
     }
 
     void MouseDown(Controller controller)
@@ -236,6 +273,219 @@ public class MyDialog : MonoBehaviour
             ExecuteEvents.Execute(current_pressed, pevent, ExecuteEvents.pointerClickHandler);
 
         current_pressed = null;
+
+        /* unselect as soon as we release the mouse press */
+        if (EventSystem.current != null)
+            EventSystem.current.SetSelectedGameObject(null);
     }
-}
+
+    float GetPriority(Controller controller)
+    {
+        Plane plane = new Plane(transform.forward, transform.position);
+        Ray ray = new Ray(controller.position, transform.forward);
+        float enter;
+        if (!plane.Raycast(ray, out enter))
+            enter = 0;
+        return 100 + enter;
+    }
+
+
+    /****************************************************************************************/
+
+    class DialogRenderer : MonoBehaviour
+    {
+        Camera ortho_camera;
+        float pixels_per_unit;
+        static readonly Vector2[] screen_deltas = new Vector2[]
+        {
+            new Vector2(0, 0),
+            new Vector2(0, 30f),
+            new Vector2(0, -30f),
+            new Vector2(50f, 0),
+            new Vector2(-50f, 0),
+        };
+
+        public void PrepareForRendering(float pixels_per_unit)
+        {
+            RectTransform rtr = transform as RectTransform;
+            if (GetComponentInChildren<Collider>() == null)
+            {
+                Rect r = rtr.rect;
+                float zscale = transform.InverseTransformVector(transform.forward * 0.108f).magnitude;
+
+                BoxCollider coll = gameObject.AddComponent<BoxCollider>();
+                coll.isTrigger = true;
+                coll.size = new Vector3(r.width, r.height, zscale);
+                coll.center = new Vector3(r.center.x, r.center.y, zscale * -0.3125f);
+            }
+
+            this.pixels_per_unit = pixels_per_unit;
+            /* This feels like a hack, but to get UI elements from a 3D position, we need a Camera
+             * to issue a Raycast().  This "camera" is set up to "look" from the controller's point 
+             * of view, usually orthogonally from the plane of the UI (but it could also be along
+             * the controller's direction, if we go for ray-casting selection).  This is inspired 
+             * from https://github.com/VREALITY/ViveUGUIModule.
+             */
+            Transform tr1 = transform.Find("Ortho Camera");
+            if (tr1 != null)
+                ortho_camera = tr1.GetComponent<Camera>();
+            else
+                ortho_camera = new GameObject("Ortho Camera").AddComponent<Camera>();
+            ortho_camera.enabled = false;
+            ortho_camera.transform.SetParent(transform);
+            ortho_camera.transform.position = rtr.TransformPoint(
+                rtr.rect.width * (0.5f - rtr.pivot.x),
+                rtr.rect.height * (0.5f - rtr.pivot.y),
+                0);
+            ortho_camera.transform.rotation = rtr.rotation;
+            ortho_camera.clearFlags = CameraClearFlags.SolidColor;
+            ortho_camera.orthographic = true;
+            ortho_camera.orthographicSize = rtr.TransformVector(0, rtr.rect.height * 0.5f, 0).magnitude;
+            ortho_camera.nearClipPlane = -10;
+            ortho_camera.farClipPlane = 10;
+            /* XXX Not managing to get a correct positionning with a camera with no targetTexture.
+             * XXX At least we can stick it a correctly-sized RenderTexture, which should never be
+             * XXX realized on the GPU.  Nonsense.
+             */
+            var render_texture = new RenderTexture((int)(rtr.rect.width * pixels_per_unit + 0.5),
+                                                   (int)(rtr.rect.height * pixels_per_unit + 0.5), 32);
+            ortho_camera.targetTexture = render_texture;
+
+            GetComponent<Canvas>().worldCamera = ortho_camera;
+        }
+
+        public void CustomRaycast(Vector3 world_position, List<RaycastResult> results)
+        {
+            Vector2 screen_point = ScreenPoint(world_position);
+            var canvas = GetComponent<Canvas>();
+            var graphicsForCanvas = GraphicRegistry.GetGraphicsForCanvas(canvas);
+            for (int i = 0; i < graphicsForCanvas.Count; i++)
+            {
+                Graphic graphic = graphicsForCanvas[i];
+                if (graphic.canvasRenderer.cull)
+                    continue;
+                if (graphic.depth == -1)
+                    continue;
+                if (!graphic.raycastTarget)
+                    continue;
+
+                int inside = -1;
+                for (int j = 0; j < screen_deltas.Length; j++)
+                {
+                    Vector2 sp1 = screen_point + screen_deltas[j];
+                    if (!RectTransformUtility.RectangleContainsScreenPoint(graphic.rectTransform, sp1, ortho_camera))
+                        continue;
+                    if (!graphic.Raycast(sp1, ortho_camera))
+                        continue;
+                    inside = j;
+                    break;
+                }
+                if (inside < 0)
+                    continue;
+
+                results.Add(new RaycastResult {
+                    gameObject = graphic.gameObject,
+                    module = GetComponent<GraphicRaycaster>(),
+                    index = results.Count,
+                    depth = graphic.depth,
+                    sortingLayer = canvas.sortingLayerID,
+                    sortingOrder = canvas.sortingOrder + (inside == 0 ? 1000000 : 0),
+                    screenPosition = screen_point,
+                });
+            }
+        }
+
+        public Vector2 ScreenPoint(Vector3 world_position)
+        {
+            RectTransform rtr = transform as RectTransform;
+            Vector2 local_pos = transform.InverseTransformPoint(world_position);   /* drop the 'z' coordinate */
+            local_pos.x += rtr.rect.width * rtr.pivot.x;
+            local_pos.y += rtr.rect.height * rtr.pivot.y;
+            /* Here, 'local_pos' is in coordinates that match the UI element coordinates.
+             * To convert it to the 'screenspace' coordinates of a camera, we need to apply
+             * a scaling factor of 'pixels_per_unit'. */
+            return local_pos * pixels_per_unit;
+        }
+    }
+
+
+
+#if false
+    static Vector2 ScreenPoint(Canvas canvas, Vector3 world_position)
+    {
+        RectTransform rtr = canvas.transform as RectTransform;
+        Vector2 local_pos = rtr.InverseTransformPoint(world_position);   /* drop the 'z' coordinate */
+        local_pos.x += rtr.rect.width * rtr.pivot.x;
+        local_pos.y += rtr.rect.height * rtr.pivot.y;
+        /* Here, 'local_pos' is in coordinates that match the UI element coordinates.
+         * To convert it to the 'screenspace' coordinates of a camera, we need to apply
+         * a scaling factor of 'pixels_per_unit'. */
+        float pixels_per_unit = canvas.GetComponent<CanvasScaler>().dynamicPixelsPerUnit;
+        local_pos = local_pos * pixels_per_unit;
+        Debug.Log("local_pos: " + local_pos);
+        return local_pos;
+    }
+
+    Camera _ortho_camera;
+
+    Camera PrepareOrthoCamera()
+    {
+        if (_ortho_camera == null)
+        {
+            _ortho_camera = new GameObject("Ortho Camera").AddComponent<Camera>();
+            _ortho_camera.transform.SetParent(transform);
+            var rtr = transform as RectTransform;
+            _ortho_camera.transform.position = rtr.TransformPoint(
+                rtr.rect.width * (0.5f - rtr.pivot.x),
+                rtr.rect.height * (0.5f - rtr.pivot.y),
+                0);
+            _ortho_camera.transform.rotation = rtr.rotation;
+            _ortho_camera.enabled = false;
+            _ortho_camera.orthographic = true;
+            _ortho_camera.orthographicSize = rtr.TransformVector(0, rtr.rect.height * 0.5f, 0).magnitude;
+            _ortho_camera.nearClipPlane = -10;
+            _ortho_camera.farClipPlane = 10;
+            /* XXX Not managing to get a correct positionning with a camera with no targetTexture.
+             * XXX At least we can stick it a correctly-sized RenderTexture, which should never be
+             * XXX realized on the GPU.  Nonsense.
+             */
+            var pixels_per_unit = 1f;
+            var render_texture = new RenderTexture((int)(rtr.rect.width * pixels_per_unit + 0.5),
+                                                   (int)(rtr.rect.height * pixels_per_unit + 0.5), 32);
+            _ortho_camera.targetTexture = render_texture;
+        }
+        return _ortho_camera;
+    }
+
+    static void CustomRaycast(Canvas canvas, Vector3 world_position, List<RaycastResult> results, Camera ortho_camera)
+    {
+        Vector2 screen_point = ScreenPoint(canvas, world_position);
+        var graphicsForCanvas = GraphicRegistry.GetGraphicsForCanvas(canvas);
+        for (int i = 0; i < graphicsForCanvas.Count; i++)
+        {
+            Graphic graphic = graphicsForCanvas[i];
+            if (graphic.canvasRenderer.cull)
+                continue;
+            if (graphic.depth == -1)
+                continue;
+            if (!graphic.raycastTarget)
+                continue;
+            if (!RectTransformUtility.RectangleContainsScreenPoint(graphic.rectTransform, screen_point, ortho_camera))
+                continue;
+            if (!graphic.Raycast(screen_point, ortho_camera))
+                continue;
+
+            results.Add(new RaycastResult
+            {
+                gameObject = graphic.gameObject,
+                module = canvas.GetComponent<GraphicRaycaster>(),
+                index = results.Count,
+                depth = graphic.depth,
+                sortingLayer = canvas.sortingLayerID,
+                sortingOrder = canvas.sortingOrder,
+                screenPosition = screen_point,
+            });
+        }
+    }
 #endif
+}
