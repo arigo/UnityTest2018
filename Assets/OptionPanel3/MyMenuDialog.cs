@@ -7,7 +7,7 @@ using UnityEngine.EventSystems;
 using BaroqueUI;
 
 
-public class MyDialog : MonoBehaviour
+public class MyMenuDialog : MonoBehaviour
 {
     public RectTransform highlightPrefab;
 
@@ -21,9 +21,10 @@ public class MyDialog : MonoBehaviour
         ct.onEnter += OnEnter;
         ct.onMoveOver += MouseMove;
         ct.onLeave += OnLeave;
-        ct.onTriggerDown += MouseDown;
+        ct.onTriggerDown += (ctrl) => MouseDownAt(ctrl.position);
         ct.onTriggerDrag += MouseMove;
-        ct.onTriggerUp += MouseUp;
+        ct.onTriggerUp += (ctrl) => MouseUpAt(ctrl.position);
+        ct.onMenuClick += MenuClick;
 
         foreach (var canvas in GetComponentsInChildren<Canvas>())
         {
@@ -34,6 +35,10 @@ public class MyDialog : MonoBehaviour
             float pixels_per_unit = GetComponent<CanvasScaler>().dynamicPixelsPerUnit;
             rend.PrepareForRendering(pixels_per_unit);
         }
+
+        foreach (var ctrl in Baroque.GetControllers())
+            if (ctrl.isActiveAndEnabled && ctrl.menuPressed)
+                StartCoroutine(FollowMenuOnController(ctrl));
     }
 
     private void OnDisable()
@@ -225,12 +230,12 @@ public class MyDialog : MonoBehaviour
         Leave();
     }
 
-    void MouseDown(Controller controller)
+    void MouseDownAt(Vector3 ctrl_position)
     {
         if (current_pressed != null)
             return;
 
-        if (UpdateCurrentPoint(controller.position))
+        if (UpdateCurrentPoint(ctrl_position))
         {
             pevent.pressPosition = pevent.position;
             pevent.pointerPressRaycast = pevent.pointerCurrentRaycast;
@@ -253,9 +258,9 @@ public class MyDialog : MonoBehaviour
         }
     }
 
-    void MouseUp(Controller controller)
+    void MouseUpAt(Vector3 ctrl_position)
     {
-        bool in_bounds = UpdateCurrentPoint(controller.position);
+        bool in_bounds = UpdateCurrentPoint(ctrl_position);
 
         if (pevent.pointerDrag != null)
         {
@@ -286,6 +291,46 @@ public class MyDialog : MonoBehaviour
         if (!plane.Raycast(ray, out enter))
             enter = 0;
         return 100 + enter;
+    }
+
+    IEnumerator FollowMenuOnController(Controller follow_ctrl)
+    {
+        while (gameObject.activeSelf)
+        {
+            if (!follow_ctrl.menuPressed)
+            {
+                /* we just released the menu button */
+                if (pevent != null)
+                {
+                    /* we're around the dialog, with the cursor visible */
+                    Vector3 position = follow_ctrl.position;
+                    if (current_pressed == null)
+                    {
+                        /* press */
+                        MouseDownAt(position);
+                        /* wait */
+                        yield return new WaitForSeconds(0.07f);
+                        if (pevent == null)
+                            yield break;
+                    }
+                    /* release */
+                    MouseUpAt(position);
+                }
+                else
+                {
+                    /* we're completely outside the dialog: close it */
+                    SendMessageUpwards("CloseDialog");
+                }
+                yield break;
+            }
+            yield return null;
+        }
+    }
+
+    void MenuClick(Controller ctrl)
+    {
+        MouseDownAt(ctrl.position);
+        StartCoroutine(FollowMenuOnController(ctrl));
     }
 
 
@@ -406,85 +451,4 @@ public class MyDialog : MonoBehaviour
             return local_pos * pixels_per_unit;
         }
     }
-
-
-
-#if false
-    static Vector2 ScreenPoint(Canvas canvas, Vector3 world_position)
-    {
-        RectTransform rtr = canvas.transform as RectTransform;
-        Vector2 local_pos = rtr.InverseTransformPoint(world_position);   /* drop the 'z' coordinate */
-        local_pos.x += rtr.rect.width * rtr.pivot.x;
-        local_pos.y += rtr.rect.height * rtr.pivot.y;
-        /* Here, 'local_pos' is in coordinates that match the UI element coordinates.
-         * To convert it to the 'screenspace' coordinates of a camera, we need to apply
-         * a scaling factor of 'pixels_per_unit'. */
-        float pixels_per_unit = canvas.GetComponent<CanvasScaler>().dynamicPixelsPerUnit;
-        local_pos = local_pos * pixels_per_unit;
-        Debug.Log("local_pos: " + local_pos);
-        return local_pos;
-    }
-
-    Camera _ortho_camera;
-
-    Camera PrepareOrthoCamera()
-    {
-        if (_ortho_camera == null)
-        {
-            _ortho_camera = new GameObject("Ortho Camera").AddComponent<Camera>();
-            _ortho_camera.transform.SetParent(transform);
-            var rtr = transform as RectTransform;
-            _ortho_camera.transform.position = rtr.TransformPoint(
-                rtr.rect.width * (0.5f - rtr.pivot.x),
-                rtr.rect.height * (0.5f - rtr.pivot.y),
-                0);
-            _ortho_camera.transform.rotation = rtr.rotation;
-            _ortho_camera.enabled = false;
-            _ortho_camera.orthographic = true;
-            _ortho_camera.orthographicSize = rtr.TransformVector(0, rtr.rect.height * 0.5f, 0).magnitude;
-            _ortho_camera.nearClipPlane = -10;
-            _ortho_camera.farClipPlane = 10;
-            /* XXX Not managing to get a correct positionning with a camera with no targetTexture.
-             * XXX At least we can stick it a correctly-sized RenderTexture, which should never be
-             * XXX realized on the GPU.  Nonsense.
-             */
-            var pixels_per_unit = 1f;
-            var render_texture = new RenderTexture((int)(rtr.rect.width * pixels_per_unit + 0.5),
-                                                   (int)(rtr.rect.height * pixels_per_unit + 0.5), 32);
-            _ortho_camera.targetTexture = render_texture;
-        }
-        return _ortho_camera;
-    }
-
-    static void CustomRaycast(Canvas canvas, Vector3 world_position, List<RaycastResult> results, Camera ortho_camera)
-    {
-        Vector2 screen_point = ScreenPoint(canvas, world_position);
-        var graphicsForCanvas = GraphicRegistry.GetGraphicsForCanvas(canvas);
-        for (int i = 0; i < graphicsForCanvas.Count; i++)
-        {
-            Graphic graphic = graphicsForCanvas[i];
-            if (graphic.canvasRenderer.cull)
-                continue;
-            if (graphic.depth == -1)
-                continue;
-            if (!graphic.raycastTarget)
-                continue;
-            if (!RectTransformUtility.RectangleContainsScreenPoint(graphic.rectTransform, screen_point, ortho_camera))
-                continue;
-            if (!graphic.Raycast(screen_point, ortho_camera))
-                continue;
-
-            results.Add(new RaycastResult
-            {
-                gameObject = graphic.gameObject,
-                module = canvas.GetComponent<GraphicRaycaster>(),
-                index = results.Count,
-                depth = graphic.depth,
-                sortingLayer = canvas.sortingLayerID,
-                sortingOrder = canvas.sortingOrder,
-                screenPosition = screen_point,
-            });
-        }
-    }
-#endif
 }
