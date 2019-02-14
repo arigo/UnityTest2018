@@ -50,7 +50,13 @@ public class dots : MonoBehaviour {
         if (current == lit)
         {
             success++;
-            var index = UnityEngine.Random.Range(0, lights.Count);
+            int index;
+            while (true)
+            {
+                index = UnityEngine.Random.Range(0, lights.Count);
+                if (index != lit)
+                    break;
+            }
             makeDefault(lights[lit]);
             lit = index;
         }
