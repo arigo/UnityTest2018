@@ -1,6 +1,12 @@
 /Assets/SteamVR
 /Assets/Oculus
 /Assets/Temporary.unity*
+/Assets/StreamingAssets/FFmpegOut/Linux
+/Assets/StreamingAssets/FFmpegOut/Linux.meta
+/Assets/StreamingAssets/FFmpegOut/macOS
+/Assets/StreamingAssets/FFmpegOut/macOS.meta
+/Assets/StreamingAssets/FFmpegOut/Windows
+/Assets/StreamingAssets/FFmpegOut/Windows.meta
 .*.sw?
 /.vs
 /Library
