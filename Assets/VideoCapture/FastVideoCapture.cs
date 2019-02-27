@@ -27,6 +27,9 @@ public class FastVideoCapture : MonoBehaviour
     Queue<AsyncGPUReadbackRequest> _requests;
     FFMpegSession ffmpeg_session;
     RenderTexture render_tex;
+    bool got_error;
+
+    public bool GotError { get { return got_error || (ffmpeg_session != null && ffmpeg_session.got_error); } }
 
     void Close()
     {
@@ -35,6 +38,7 @@ public class FastVideoCapture : MonoBehaviour
         if (ffmpeg_session != null)
         {
             ffmpeg_session.Close();
+            got_error = GotError;   /* capture ffmpeg_session.got_error */
             ffmpeg_session = null;
         }
     }
@@ -67,6 +71,7 @@ public class FastVideoCapture : MonoBehaviour
                 }
                 render_tex_1 = camera.targetTexture;
             }
+            got_error = false;
             ffmpeg_session = new FFMpegSession(render_tex_1.width, render_tex_1.height, frameRate, outputPath);
             render_tex = render_tex_1;
             _requests = new Queue<AsyncGPUReadbackRequest>();
@@ -118,6 +123,7 @@ public class FastVideoCapture : MonoBehaviour
         System.Diagnostics.Process proc;
         FileStream pipe;
         int width, height;
+        internal bool got_error;
 
         public FFMpegSession(int width, int height, int frameRate, string outputPath)
         {
@@ -155,6 +161,8 @@ public class FastVideoCapture : MonoBehaviour
             if (bytes.Length != scanline * height)
             {
                 Debug.LogError("got an array of " + bytes.Length + " bytes, expected " + scanline + "*" + height);
+                got_error = true;
+                Close();
                 return;
             }
 
@@ -169,6 +177,7 @@ public class FastVideoCapture : MonoBehaviour
                     if (!WriteFile(hFile, ptr, bytes_remaining, out bytes_written, (IntPtr)0))
                     {
                         Debug.LogError("Video encoder was shut down (WriteFile error to ffmpeg)");
+                        got_error = true;
                         Close();
                         return;
                     }
