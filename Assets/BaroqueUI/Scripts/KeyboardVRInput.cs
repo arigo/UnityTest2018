@@ -37,7 +37,7 @@ namespace BaroqueUI
             return inputField;
         }
 
-        static void GetBounds(InputField inputField, out int start, out int stop)
+        public static void GetBounds(InputField inputField, out int start, out int stop)
         {
             /* mess mess, gives a simpler interface to get the selection */
             int length = inputField.text.Length;
@@ -63,7 +63,7 @@ namespace BaroqueUI
             if (start > stop) start = stop;
         }
 
-        static void SetBounds(InputField inputField, int start, int stop)
+        public static void SetBounds(InputField inputField, int start, int stop)
         {
             /* mess mess, gives a simpler interface to set the selection */
             inputField.caretPosition = stop;
