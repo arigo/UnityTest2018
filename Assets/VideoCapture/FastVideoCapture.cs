@@ -93,7 +93,9 @@ public class FastVideoCapture : MonoBehaviour
             else if (req.done)
             {
                 NativeArray<byte> buffer = req.GetData<byte>();
+                UnityEngine.Profiling.Profiler.BeginSample("FastVideoCapture.Write");
                 ffmpeg_session.Write(buffer);
+                UnityEngine.Profiling.Profiler.EndSample();
                 _requests.Dequeue();
             }
             else
@@ -132,7 +134,8 @@ public class FastVideoCapture : MonoBehaviour
                             + " -video_size " + width + "x" + height
                             + " -framerate " + frameRate
                             + " -loglevel warning -i - -vf vflip -pix_fmt yuv420p"
-                            + " " + outputPath;
+                            + " \"" + outputPath + "\"";
+            Debug.Log("ffmpeg arguments: " + arguments);
             proc = System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
             {
                 FileName = ExecutablePath,
