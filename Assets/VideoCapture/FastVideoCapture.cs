@@ -17,6 +17,7 @@ using UnityEngine.Experimental.Rendering;
 
 public class FastVideoCapture : MonoBehaviour
 {
+    public RenderTexture captureRenderTexture;
     public int frameRate = 30;
     public string outputPath = "FastVideoCapture.mp4";
 
@@ -52,7 +53,20 @@ public class FastVideoCapture : MonoBehaviour
     {
         if (ffmpeg_session == null)
         {
-            var render_tex_1 = GetComponent<Camera>().targetTexture;
+            var render_tex_1 = captureRenderTexture;
+            if (render_tex_1 == null)
+            {
+                var camera = GetComponent<Camera>();
+                if (camera == null || camera.targetTexture == null)
+                {
+                    Debug.LogError("the FastVideoCapture component must be either have a " +
+                        "'captureRenderTexture' set, or be with a Camera component with a " +
+                        "non-null 'targetTexture'.");
+                    enabled = false;
+                    return;
+                }
+                render_tex_1 = camera.targetTexture;
+            }
             ffmpeg_session = new FFMpegSession(render_tex_1.width, render_tex_1.height, frameRate, outputPath);
             render_tex = render_tex_1;
             _requests = new Queue<AsyncGPUReadbackRequest>();
