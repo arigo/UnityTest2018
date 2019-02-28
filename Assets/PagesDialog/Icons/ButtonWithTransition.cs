@@ -8,10 +8,10 @@ public class ButtonWithTransition : Button
 {
     public enum TransitionState   /* same as SelectionState, really */
     {
-        Normal = 0,
-        Highlighted = 1,
-        Pressed = 2,
-        Disabled = 3
+        Normal = SelectionState.Normal,
+        Highlighted = SelectionState.Highlighted,
+        Pressed = SelectionState.Pressed,
+        Disabled = SelectionState.Disabled,
     }
     public delegate void StateTransition(TransitionState state);
     public StateTransition onStateTransition { get; set; }
@@ -19,7 +19,6 @@ public class ButtonWithTransition : Button
 
     protected override void DoStateTransition(SelectionState state, bool instant)
     {
-        Debug.Log(state);
         base.DoStateTransition(state, instant);
         if (onStateTransition != null)
             onStateTransition((TransitionState)state);
