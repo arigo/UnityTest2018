@@ -7,10 +7,16 @@ using UnityEngine.UI;
 
 namespace MyTest
 {
+    public abstract class PageDlg : MonoBehaviour
+    {
+        public abstract void Activate();
+    }
+
     public class PagesDlgIcon : MonoBehaviour
     {
         public Transform scaleIcon, scaleGrayIcon;
         public bool pageActive;
+        public PageDlg panel;
         public float hoveringFactor;
 
         const float HOV_REGULAR = 1f;
@@ -54,6 +60,15 @@ namespace MyTest
 
         void UpdateState()
         {
+            if (pageActive)
+            {
+                panel.Activate();
+
+                var title = gameObject.name;
+                transform.parent.GetComponentInChildren<PopupDialogTitle>().GetComponent<Text>().text = title;
+            }
+
+            panel.gameObject.SetActive(pageActive);
             scaleIcon.gameObject.SetActive(pageActive);
             scaleGrayIcon.gameObject.SetActive(!pageActive);
 
@@ -62,12 +77,6 @@ namespace MyTest
                 hov = Mathf.Max(hov, HOV_HIGHLIGHTED);
             var tr = pageActive ? scaleIcon : scaleGrayIcon;
             tr.localScale = Vector3.one * hov;
-
-            if (pageActive)
-            {
-                var title = gameObject.name;
-                transform.parent.GetComponentInChildren<PopupDialogTitle>().GetComponent<Text>().text = title;
-            }
         }
     }
 }
