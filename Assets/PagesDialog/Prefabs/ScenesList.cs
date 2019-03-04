@@ -10,14 +10,14 @@ namespace MyTest
     {
         public RectTransform contentRtr;
         public ButtonWithTransition sceneItemPrefab;
-        public float marginTop, marginBottom, sceneItemHeight;
+        public float marginTop, marginBottom, sceneItemHeight, minScroll;
 
         public override void Activate()
         {
             for (int i = contentRtr.childCount - 1; i >= 0; --i)
                 Destroy(contentRtr.GetChild(i).gameObject);
 
-            var scene_names = new List<string> { "abc", "def", "ghijkl",
+            var scenes_names = new List<string> { "abc", "def", "ghijkl",
             "x", "x2", "x2x", "1232231",
             "x", "x2", "x2x", "1232231",
             "x", "x2", "x2x", "1232231",
@@ -25,12 +25,14 @@ namespace MyTest
             "x", "x2", "x2x", "1232231",
             "x", "x2", "x2x", "1232231",};
 
-            float text_height = scene_names.Count * sceneItemHeight;
+            float text_height = scenes_names.Count * sceneItemHeight;
+            float box_height = (contentRtr.parent as RectTransform).rect.height;
             contentRtr.SetSizeWithCurrentAnchors(RectTransform.Axis.Vertical,
-                marginBottom + text_height + marginTop);
+                Mathf.Max(marginBottom + text_height + marginTop,
+                          box_height + minScroll));
 
             float ybottom = -marginTop;
-            foreach (var scene_name in scene_names)
+            foreach (var scene_name in scenes_names)
             {
                 ybottom -= sceneItemHeight;
 
