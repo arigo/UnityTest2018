@@ -4,6 +4,7 @@
 	{
 		_LeftTex ("Texture", 2D) = "white" {}
         _RightTex("Texture", 2D) = "white" {}
+        _XAxis("Factor along the X axis", float) = 1.0
 	}
 	SubShader
 	{
@@ -30,6 +31,7 @@
 			};
 
 			sampler2D _LeftTex, _RightTex;
+            float _XAxis;
 			
 			v2f vert (appdata v)
 			{
@@ -42,7 +44,7 @@
 			fixed4 frag (v2f i) : SV_Target
 			{
                 float2 uv = i.uv.xy / i.uv.w;
-                uv = float2(1 + uv.x, 1 - uv.y) * 0.5;
+                uv = float2(1 + _XAxis * uv.x, 1 - uv.y) * 0.5;
                 fixed4 col;
                 if (unity_StereoEyeIndex == 0)
                     col = tex2D(_LeftTex, uv);

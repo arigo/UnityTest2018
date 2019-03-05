@@ -24,6 +24,7 @@ public class WindowToElsewhere : MonoBehaviour
             rt_right = new RenderTexture(XRSettings.eyeTextureDesc);
             GetComponent<Renderer>().material.SetTexture("_LeftTex", rt_left);
             GetComponent<Renderer>().material.SetTexture("_RightTex", rt_right);
+            GetComponent<Renderer>().material.SetFloat("_XAxis", 1f);
 
             var cam = Baroque.GetHeadTransform().GetComponent<Camera>();
             secondCamera.targetTexture = rt_left;
