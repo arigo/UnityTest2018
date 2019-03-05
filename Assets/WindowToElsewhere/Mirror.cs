@@ -40,13 +40,13 @@ public class Mirror : MonoBehaviour
 
         secondCamera.transform.position = Reflect(plane, InputTracking.GetLocalPosition(XRNode.LeftEye));
         secondCamera.transform.rotation = Reflect(plane, InputTracking.GetLocalRotation(XRNode.LeftEye));
-        secondCamera.projectionMatrix = Camera.main.GetStereoProjectionMatrix(Camera.StereoscopicEye.Right);
+        secondCamera.projectionMatrix = Mirrored(Camera.main.GetStereoProjectionMatrix(Camera.StereoscopicEye.Left));
         secondCamera.targetTexture = rt_left;
         secondCamera.Render();
 
         secondCamera.transform.position = Reflect(plane, InputTracking.GetLocalPosition(XRNode.RightEye));
         secondCamera.transform.rotation = Reflect(plane, InputTracking.GetLocalRotation(XRNode.RightEye));
-        secondCamera.projectionMatrix = Camera.main.GetStereoProjectionMatrix(Camera.StereoscopicEye.Left);
+        secondCamera.projectionMatrix = Mirrored(Camera.main.GetStereoProjectionMatrix(Camera.StereoscopicEye.Right));
         secondCamera.targetTexture = rt_right;
         secondCamera.Render();
     }
@@ -70,5 +70,12 @@ public class Mirror : MonoBehaviour
         Vector3 reflected_forward = ReflectVector(plane, forward);
         Vector3 reflected_up = ReflectVector(plane, up);
         return Quaternion.LookRotation(reflected_forward, reflected_up);
+    }
+
+    Matrix4x4 Mirrored(Matrix4x4 projmat)
+    {
+        /* XXX I get good results with this.  Must understand why */
+        projmat.m02 = -projmat.m02;
+        return projmat;
     }
 }
