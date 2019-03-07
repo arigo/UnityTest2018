@@ -14,9 +14,6 @@ public class Mirror : MonoBehaviour
 
     /* NOTE: clean code, but only works if Edit -> Project Settings -> Player -> XR Settings ->
      * Stereo Rendering Method is set to Multi Pass.
-     * 
-     * BUG: the mirror is not perfectly positioned.  It reflects images shifted a very little bit
-     * to the left.  I don't understand why...
      */
 
     private void OnWillRenderObject()
