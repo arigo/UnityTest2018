@@ -54,6 +54,8 @@ public class MakeSpheres2 : MonoBehaviour
             depthTex[i] = new RenderTexture(depth_desc);
             depthTex[i].wrapMode = TextureWrapMode.Clamp;
 
+            Shader.SetGlobalFloat("CDS_MaxDist", d_max);
+
             var cam = GetComponent<Camera>();
             cam.transform.position = origin;
             cam.nearClipPlane = d_min;

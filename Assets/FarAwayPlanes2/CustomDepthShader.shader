@@ -2,7 +2,6 @@
 {
 	Properties
 	{
-        _MaxDist("Maximum distance", float) = 1
 	}
 	SubShader
 	{
@@ -35,12 +34,12 @@
 				return o;
 			}
 
-            float _MaxDist;
+            float CDS_MaxDist;
 			
 			fixed4 frag (v2f i) : SV_Target
 			{
                 /* the world depth (distance to camera) is equal to '-i.viewpos.z' */
-                float sitcking_depth = _MaxDist - (-i.viewpos.z);
+                float sitcking_depth = CDS_MaxDist - (-i.viewpos.z);
                 return fixed4(sitcking_depth, 0, 0, 1);
 			}
 			ENDCG

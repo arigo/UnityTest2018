@@ -65,11 +65,11 @@
                 float d_min = _MinDist;
                 float d_max = world_pos.z;
 
-                [unroll] for (int j = 0; j < 20; j++)
+                [unroll] for (int j = 0; j < 40; j++)
                 {
-                    float d_real = lerp(d_min, d_max, j / 20.0);
+                    float d_real = lerp(d_min, d_max, j / 40.0);
                     float3 pt_3d = PointAlongEyeLine(world_pos, d_real);
-                    if (d_real >= d_max - StickingDepth(pt_3d))
+                    if (StickingDepth(pt_3d) >= d_max - d_real)
                         return pt_3d;
                 }
                 return world_pos;
