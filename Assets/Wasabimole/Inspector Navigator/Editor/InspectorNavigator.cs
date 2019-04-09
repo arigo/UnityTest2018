@@ -15,8 +15,8 @@ namespace InspectorNavigator.Editor
     public static class KeyBindings
     {
         // PC hot-keys
-        public const string BackPC = "%LEFT";
-        public const string ForwardPC = "%RIGHT";
+        public const string BackPC = "&LEFT";
+        public const string ForwardPC = "&RIGHT";
 
         // Mac hot-keys
         public const string BackMac = "&%LEFT";
