@@ -38,7 +38,20 @@
 			fixed4 frag (v2f i) : SV_Target
 			{
                 float red = i.localPosition.x;
-				return fixed4(red, 0, 0, 1);
+            
+                uint root = DebugFragment(i.vertex);
+                //DbgValue4(root, i.localPosition);
+                //DbgSetColor(root, float4(red, red, red, 1));
+                DbgVectorO3(root, i.localPosition.xyz);
+                DbgChangePosByO3(root, i.localPosition.xyz);
+                DbgSetColor(root, float4(red, red, red, red));
+                //DbgSphereW1(root, 0.05);
+                //DbgDisc(root, 2);
+
+                //DbgResetPos(root);
+                //DbgValue1(root, i.localPosition.x);
+
+                return fixed4(red, 0, 0, 1);
 			}
 			ENDCG
 		}
