@@ -13,7 +13,7 @@
 		{
 			CGPROGRAM
             #pragma target 4.5
-            //#include "../ShaderDebugger/debugger.cginc"
+            #include "../ShaderDebugger/debugger.cginc"
             #pragma vertex vert
 			#pragma fragment frag
 			
@@ -22,17 +22,19 @@
 			struct appdata
 			{
 				float4 vertex : POSITION;
+                float3 normal : NORMAL;
 			};
 
 			struct v2f
 			{
 				float4 vertex : SV_POSITION;
-                float3 shadow_uvz : TEXCOORD0;
+                float4 shadow_uvzn : TEXCOORD0;
             };
 
             fixed4 _Color;
             float4x4 ShadowCustomMat;
             Texture2D ShadowCustomTex;
+            float3 ShadowCustomNormal;
             SamplerComparisonState samplerShadowCustomTex;
 			
 			v2f vert (appdata v)
@@ -41,7 +43,9 @@
 				o.vertex = UnityObjectToClipPos(v.vertex);
                 float4 world_pos = mul(unity_ObjectToWorld, v.vertex);
                 float4 shadow_pos = mul(ShadowCustomMat, world_pos);
-                o.shadow_uvz = shadow_pos.xyz / shadow_pos.w;
+                float3 world_normal = mul((float3x3)unity_ObjectToWorld, v.normal);
+                float shadow_normal = dot(ShadowCustomNormal, normalize(world_normal));
+                o.shadow_uvzn = float4(shadow_pos.xyz / shadow_pos.w, shadow_normal);
 				return o;
 			}
 
@@ -50,12 +54,17 @@
 			{
 				fixed4 col = _Color;
 
-                float x = UNITY_SAMPLE_SHADOW(ShadowCustomTex, i.shadow_uvz);
+                float factor = i.shadow_uvzn.w;
+                float x;
+                if (factor < 0)
+                    x = 0;
+                else
+                    x = factor * UNITY_SAMPLE_SHADOW(ShadowCustomTex, i.shadow_uvzn.xyz);
                 x = (x + 1) * 0.5;
                 col *= x;
 
-                //uint root = DebugFragment(i.vertex);
-                //DbgValue3(root, i.shadow_uvz);
+                /*uint root = DebugFragment(i.vertex);
+                DbgValue3(root, (float3)ShadowCustomMat[2]);*/
 
 				return col;
 			}
