@@ -14,7 +14,7 @@
 			#pragma vertex vert
 			#pragma fragment frag
             #pragma target 5.0
-            #include "debugger.cginc"
+            #include "../debugger.cginc"
 
 			struct appdata
 			{
@@ -40,16 +40,11 @@
                 float red = i.localPosition.x;
             
                 uint root = DebugFragment(i.vertex);
-                //DbgValue4(root, i.localPosition);
-                //DbgSetColor(root, float4(red, red, red, 1));
+                DbgSetColor(root, float4(1, i.localPosition.x, 0, 1));
                 DbgVectorO3(root, i.localPosition.xyz);
+                
                 DbgChangePosByO3(root, i.localPosition.xyz);
-                DbgSetColor(root, float4(red, red, red, red));
-                //DbgSphereW1(root, 0.05);
-                //DbgDisc(root, 2);
-
-                //DbgResetPos(root);
-                //DbgValue1(root, i.localPosition.x);
+                DbgValue1(root, i.localPosition.x);
 
                 return fixed4(red, 0, 0, 1);
 			}
